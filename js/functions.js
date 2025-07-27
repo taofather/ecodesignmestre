@@ -317,7 +317,7 @@ var INSPIRO = {},
                     loadingParentElement: 'body', //animsition wrapper element
                     loadingClass: 'animsition-loading',
                     loadingInner: '<div class="loader">' + loadingInnerHTML + '</div>',
-                    linkElement: '#mainMenu a:not([target="_blank"]):not([href*="#"]):not([data-lightbox]):not([href^="mailto"]):not([href^="tel"]):not([href^="sms"]):not([href^="call"]), .animsition-link, .slide-link'
+                    linkElement: '#mainMenu a:not([target="_blank"]):not([href*="#"]):not([data-lightbox]):not([href^="mailto"]):not([href^="tel"]):not([href^="sms"]):not([href^="call"]):not([href*="mestre-table"]), .animsition-link, .slide-link'
 
 
                 });
@@ -550,17 +550,28 @@ var INSPIRO = {},
 
                 if ($body.is('.device-lg, .device-md')) {
                     $("body #mainMenu.menu-onclick nav > ul > li.dropdown > a, body .dropdown-submenu > a, body .dropdown-submenu > span").on('click touchend', function (e) {
-
-                        $(this).parent('li').siblings().removeClass('hover-active').removeClass('current');
-                        $(this).parent('li').toggleClass('hover-active');
-                        return false;
+                        var href = $(this).attr('href');
+                        
+                        // Only prevent default for non-navigation links (dropdown toggles)
+                        if (!href || href === '#' || href === 'javascript:void(0)' || href.startsWith('#')) {
+                            $(this).parent('li').siblings().removeClass('hover-active').removeClass('current');
+                            $(this).parent('li').toggleClass('hover-active');
+                            return false;
+                        }
+                        // Allow normal navigation for actual page links
                     });
 
                 } else {
                     $("#mainMenu nav > ul > li.dropdown > a, .dropdown-submenu > a, .dropdown-submenu > span").on('click touchend', function (e) {
-                        $(this).parent('li').siblings().removeClass('hover-active');
-                        $(this).parent('li').toggleClass('hover-active');
-                        return false;
+                        var href = $(this).attr('href');
+                        
+                        // Only prevent default for non-navigation links (dropdown toggles)
+                        if (!href || href === '#' || href === 'javascript:void(0)' || href.startsWith('#')) {
+                            $(this).parent('li').siblings().removeClass('hover-active');
+                            $(this).parent('li').toggleClass('hover-active');
+                            return false;
+                        }
+                        // Allow normal navigation for actual page links
                     });
                 }
 
@@ -650,9 +661,15 @@ var INSPIRO = {},
         dotsMenu: function () {
             if ($dotsMenu.length > 0) {
                 $dotsMenuItems.on('click', function () {
-                    $dotsMenuItems.parent("li").removeClass('current');
-                    $(this).parent("li").addClass('current');
-                    return false;
+                    var href = $(this).attr('href');
+                    
+                    // Only prevent default for anchor links, allow page navigation
+                    if (href && href.startsWith('#')) {
+                        $dotsMenuItems.parent("li").removeClass('current');
+                        $(this).parent("li").addClass('current');
+                        return false;
+                    }
+                    // Allow normal navigation for page links
                 });
 
                 $dotsMenuItems.parents("li").removeClass('current');
@@ -1222,7 +1239,19 @@ var INSPIRO = {},
 
         },
         naTo: function () {
-            $('a.scroll-to, #dotsMenu > ul > li > a, .menu-one-page nav > ul > li > a').on('click', function () {
+            // Handle all dotsMenu links, but filter behavior based on href
+            $('a.scroll-to, #dotsMenu > ul > li > a, .menu-one-page nav > ul > li > a[href^="#"]').on('click', function (e) {
+                var $anchor = $(this);
+                var href = $anchor.attr('href');
+                
+                // Check if this is an anchor link and target exists
+                if (!href || !href.startsWith('#') || $(href).length === 0) {
+                    // Not an anchor link or target doesn't exist, navigate normally
+                    return;
+                }
+
+                e.preventDefault();
+
                 if ($body.is('.device-xxs, .device-xs, .device-sm')) {
                     if ($mainmenu.hasClass('menu-one-page')) {
                         $header.find("#mainMenu").css("max-height", 0);
@@ -1241,12 +1270,9 @@ var INSPIRO = {},
                     extraHeaderHeight = $header.height();
                 }
 
-                var $anchor = $(this);
-
                 $('html, body').stop(true, false).animate({
-                    scrollTop: ($($anchor.attr('href')).offset().top - (extraHeaderHeight + extraPaddingTop))
+                    scrollTop: ($(href).offset().top - (extraHeaderHeight + extraPaddingTop))
                 }, 1500, 'easeInOutExpo');
-                return false;
             });
         },
         textRotator: function () {
